@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ebao.V2.DPEM", "Ebao.V2.DPEM\Ebao.V2.DPEM.csproj", "{83E1F8E2-E57F-40A0-8D73-835F061ED60D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ebao.V2.DPEM.Models", "Ebao.V2.DPEM.Models\Ebao.V2.DPEM.Models.csproj", "{DDB9DCA8-1C11-4BF2-A54E-AAA91F874827}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ebao.V2.DPEM.Helpers", "Ebao.V2.DPEM.Helpers\Ebao.V2.DPEM.Helpers.csproj", "{35E1685F-377E-4129-BFC8-9ECAD2D0CA6B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{83E1F8E2-E57F-40A0-8D73-835F061ED60D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83E1F8E2-E57F-40A0-8D73-835F061ED60D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83E1F8E2-E57F-40A0-8D73-835F061ED60D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83E1F8E2-E57F-40A0-8D73-835F061ED60D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDB9DCA8-1C11-4BF2-A54E-AAA91F874827}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDB9DCA8-1C11-4BF2-A54E-AAA91F874827}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDB9DCA8-1C11-4BF2-A54E-AAA91F874827}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDB9DCA8-1C11-4BF2-A54E-AAA91F874827}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35E1685F-377E-4129-BFC8-9ECAD2D0CA6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35E1685F-377E-4129-BFC8-9ECAD2D0CA6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35E1685F-377E-4129-BFC8-9ECAD2D0CA6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35E1685F-377E-4129-BFC8-9ECAD2D0CA6B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

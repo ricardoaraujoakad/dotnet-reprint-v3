@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DistributedLock.FileSystem" Version="1.0.2" />
+      <PackageReference Include="libphonenumber-csharp" Version="8.13.42" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Refit" Version="6.3.2" />
+      <PackageReference Include="Refit.HttpClientFactory" Version="6.3.2" />
+      <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+      <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Ebao.V2.DPEM.Helpers\Ebao.V2.DPEM.Helpers.csproj" />
+      <ProjectReference Include="..\Ebao.V2.DPEM.Models\Ebao.V2.DPEM.Models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Dictionaries\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Configs\appsettings-uat1.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Dictionaries\Activities.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Dictionaries\NavigationType.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Dictionaries\Propulsion.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Dictionaries\UseOfVessel.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Dictionaries\VesselType.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,6 @@
+﻿{
+  "motor": 1,
+  "vela": 2,
+  "vela/motor": 3,
+  "sem propulsão": 4
+}
