@@ -50,13 +50,13 @@ public class PrintService : ServiceBase<PrintService>
 
         var needCallNewZenvia = await NeedCallNewZenviaAsync();
 
-        if (!string.IsNullOrEmpty(policyId))
-        {
-            await RequestEmailProcessAsync(policyId, policyNo);
+        var emailActionDecision = await GetEmailActionDecisionAsync();
 
-            var emailDocumentResponse = await SendEmailDocumentAsync(policyNo, policyId);
-            return emailDocumentResponse;
-        }
+        var requestEmailProcess = await RequestEmailProcessAsync(policyId, policyNo);
+
+        var requestEmailPreview = await RequestEmailPreviewAsync(policyId, policyNo);
+
+        var emailDocumentResponse = await SendEmailDocumentAsync(policyNo, policyId);
 
         return printResponse;
     }
@@ -144,36 +144,7 @@ public class PrintService : ServiceBase<PrintService>
         return filePath;
     }
 
-    /// <summary>
-    /// Requests the email process for the policy.
-    /// </summary>
-    /// <param name="policyId">The extracted policy ID.</param>
-    /// <param name="transactionNo">The transaction number (policy number).</param>
-    /// <returns>The response content from the email process request.</returns>
-    public async Task<string> RequestEmailProcessAsync(string policyId, string transactionNo)
-    {
-        Logger.LogInformation("Requesting email process for policy ID: {PolicyId}", policyId);
-
-        var request = new EmailProcessRequest
-        {
-            SyskeyRequestToken = _userService.GetSyskeyRequestToken(),
-            PolicyId = policyId,
-            TransactionNo = transactionNo
-        };
-
-        try
-        {
-            var response = await _printApi.RequestEmailProcessAsync(request);
-            Logger.LogInformation("Email process request successful for policy ID: {PolicyId}", policyId);
-            return response;
-        }
-        catch (Exception e)
-        {
-            Logger.LogError(e, "Error requesting email process for policy ID: {PolicyId}", policyId);
-            throw;
-        }
-    }
-
+   
     /// <summary>
     /// Sends the email document for the policy.
     /// </summary>
@@ -307,6 +278,95 @@ public class PrintService : ServiceBase<PrintService>
         catch (Exception e)
         {
             Logger.LogError(e, "Error checking if new Zenvia call is needed");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Requests the email process for the policy.
+    /// </summary>
+    /// <param name="policyId">The extracted policy ID.</param>
+    /// <param name="transactionNo">The transaction number (policy number).</param>
+    /// <returns>The response content from the email process request.</returns>
+    public async Task<string> RequestEmailProcessAsync(string policyId, string transactionNo)
+    {
+        Logger.LogInformation("Requesting email process for policy ID: {PolicyId}", policyId);
+
+        var request = new EmailProcessRequest
+        {
+            SyskeyRequestToken = _userService.GetSyskeyRequestToken(),
+            PolicyId = policyId,
+            TransactionNo = transactionNo
+        };
+
+        try
+        {
+            var response = await _printApi.RequestEmailProcessAsync(request);
+            Logger.LogInformation("Email process request successful for policy ID: {PolicyId}", policyId);
+            return response;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error requesting email process for policy ID: {PolicyId}", policyId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Requests the email preview for the policy.
+    /// </summary>
+    /// <param name="policyId">The policy ID.</param>
+    /// <param name="policyNo">The policy number.</param>
+    /// <returns>The response content from the email preview request.</returns>
+    public async Task<string> RequestEmailPreviewAsync(string policyId, string policyNo)
+    {
+        Logger.LogInformation("Requesting email preview for policy ID: {PolicyId}", policyId);
+
+        var request = new EmailPreviewRequest
+        {
+            SyskeyRequestToken = _userService.GetSyskeyRequestToken(),
+            PolicyId = policyId,
+            PolicyNo = policyNo,
+            TransactionNo = policyNo
+        };
+
+        try
+        {
+            var response = await _printApi.RequestEmailPreviewAsync(request);
+            Logger.LogInformation("Email preview request successful for policy ID: {PolicyId}", policyId);
+            return response;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error requesting email preview for policy ID: {PolicyId}", policyId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets the email action decision.
+    /// </summary>
+    /// <returns>The response from the email action decision request.</returns>
+    public async Task<string> GetEmailActionDecisionAsync()
+    {
+        Logger.LogInformation("Getting email action decision");
+
+        var request = new EmailActionDecisionRequest
+        {
+            SyskeyRequestToken = _userService.GetSyskeyRequestToken(),
+            ActionType = "decision",
+            LocalPrint = true
+        };
+
+        try
+        {
+            var response = await _printApi.GetEmailActionDecisionAsync(request);
+            Logger.LogInformation("Email action decision request successful");
+            return response;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error getting email action decision");
             throw;
         }
     }

@@ -27,5 +27,11 @@ namespace Ebao.V2.DPEM.Api.Print
 
         [Get("/insurance/gs/servlet/com.ebao.lisig.integration.agpi.web.action.AgpiPrintAction")]
         Task<string> NeedCallNewZenviaAsync([Query] NeedCallNewZenviaRequest request);
+
+        [Get("/insurance/gs/servlet/com.ebao.lisig.integration.agpi.web.action.AgpiEmailAction")]
+        Task<string> GetEmailActionDecisionAsync([Query] EmailActionDecisionRequest request);
+
+        [Get("/insurance/gs/servlet/com.ebao.lisig.integration.agpi.web.action.AgpiPrintAction")]
+        Task<string> RequestEmailPreviewAsync([Query] EmailPreviewRequest request);
     }
 }
