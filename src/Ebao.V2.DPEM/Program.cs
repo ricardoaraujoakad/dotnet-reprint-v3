@@ -93,80 +93,42 @@ await using (userHandle)
 
     int retry = 0;
 
-    do
+
+    await using var scope = provider.CreateAsyncScope();
+
+    var ebaoService = scope.ServiceProvider.GetRequiredService<EBaoService>();
+    var printService = scope.ServiceProvider.GetRequiredService<PrintService>();
+    var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+    //var bindingService = scope.ServiceProvider.GetRequiredService<BindingService>();
+    //var digitalService = scope.ServiceProvider.GetRequiredService<DigitalService>();
+
+    Log.Information("Obtendo lista de propostas para envio.");
+
+    retry++;
+
+    var sw = Stopwatch.StartNew();
+
+    await userService.AuthenticateAsync();
+
+    var certificates = new[] { "027982024011457001455", "027982024011457001454", "027982024011457001453", "027982024011457001452", "027982024011457001451" };
+
+    foreach (var policy in certificates)
     {
-        await using var scope = provider.CreateAsyncScope();
-
-        var ebaoService = scope.ServiceProvider.GetRequiredService<EBaoService>();
-        //var bindingService = scope.ServiceProvider.GetRequiredService<BindingService>();
-        //var digitalService = scope.ServiceProvider.GetRequiredService<DigitalService>();
-
-        Log.Information("Obtendo lista de propostas para envio.");
-
-        retry++;
-        var proposals = await bindingService.GetNextProposalAsync();
-
-        if (proposals != null)
+        try
         {
-            foreach (var proposal in proposals)
-            {
-                retry = 0;
+            var result = await printService.PrintProcessAndSendEmailAsync(policy);
 
-                using var __ = LogContext.PushProperty("ProposalId", proposal.Id);
-
-                var @lock = new FileDistributedLock(lockDirectory, proposal.Id.ToString());
-                await using var handle = await @lock.TryAcquireAsync();
-
-                if (handle == null)
-                {
-                    Log.Logger.Warning("Já existe outro processo efetuando a emissão da proposta {Proposal}.",
-                        proposal.ProposalId);
-
-                    continue;
-                }
-
-                var sw = Stopwatch.StartNew();
-
-                (string Certificate, string OrderId) result = default;
-
-                try
-                {
-                    result = await ebaoService.SendToEbaoAsync(proposal.XmlMessage);
-                    await bindingService.UpdateProposalStatusAsync(proposal, sw.Elapsed, result.Certificate,
-                        DateTime.Now.ConvertToTimeZone(), null);
-
-                    Log.Logger.Information("Proposta {Proposal} enviada para o eBao com sucesso.", proposal.ProposalId);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Erro ao enviar proposta {Proposal} para o eBao.", proposal.ProposalId);
-                    await bindingService.UpdateProposalStatusAsync(proposal, sw.Elapsed, null, null, ex);
-                }
-
-
-                if (result != default)
-                {
-                    try
-                    {
-                        //Este trecho apenas funciona em produção
-                        await digitalService.SendInformationToDigitalAsync(result.OrderId, result.Certificate);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Falha ao enviar para o digital a proposal {Proposal}.", proposal.ProposalId);
-                    }
-                }
-
-                Log.Information("Tempo de processamento: {Elapsed}", sw.Elapsed);
-
-                await ebaoService.LogoutAsync();
-                Config.State = new object();
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
+            Log.Logger.Information("Reprint da Apolice {policy} realizado no eBao com sucesso.", policy);
         }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Erro ao enviar fazer o reprint da Apolice {policy} no eBao.", policy);
+        }
+    }
 
-        var secondsToAwait = Math.Min(retry * 2, 120);
-        Log.Information("Aguardando {Seconds} segundos para nova tentativa de obter as apólices.", secondsToAwait);
-        await Task.Delay(TimeSpan.FromSeconds(secondsToAwait));
-    } while (true);
+    Log.Information("Tempo de processamento: {Elapsed}", sw.Elapsed);
+
+    await ebaoService.LogoutAsync();
+    Config.State = new object();
+    await Task.Delay(TimeSpan.FromSeconds(1));
 }

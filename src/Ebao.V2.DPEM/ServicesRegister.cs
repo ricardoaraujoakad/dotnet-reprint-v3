@@ -8,6 +8,7 @@ using Ebao.V2.DPEM.Api.Data;
 using Ebao.V2.DPEM.Api.Digital;
 using Ebao.V2.DPEM.Api.Handlers;
 using Ebao.V2.DPEM.Api.Payment;
+using Ebao.V2.DPEM.Api.Print;
 using Ebao.V2.DPEM.Api.Quotation;
 using Ebao.V2.DPEM.Models;
 using Ebao.V2.DPEM.Services;
@@ -66,24 +67,24 @@ public static class ServicesRegister
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(Config.IntegrationConfig.DigitalUrl));
 
         services.AddRefitClient<IStartApi>(new RefitSettings
+        {
+            HttpMessageHandlerFactory = () =>
             {
-                HttpMessageHandlerFactory = () =>
-                {
-                    handler.CookieContainer = new CookieContainer();
-                    return handler;
-                }
-            })
+                handler.CookieContainer = new CookieContainer();
+                return handler;
+            }
+        })
             .ConfigurePrimaryHttpMessageHandler<AuthHandler>()
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(eBaoUrl));
 
         services.AddRefitClient<IAuthApi>(new RefitSettings
+        {
+            HttpMessageHandlerFactory = () =>
             {
-                HttpMessageHandlerFactory = () =>
-                {
-                    handler.CookieContainer = new CookieContainer();
-                    return handler;
-                }
-            })
+                handler.CookieContainer = new CookieContainer();
+                return handler;
+            }
+        })
             .ConfigurePrimaryHttpMessageHandler<AuthHandler>()
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(eBaoUrl));
 
@@ -110,6 +111,10 @@ public static class ServicesRegister
         services.AddRefitClient<IPaymentApi>()
             .AddHttpMessageHandler<RequestHandler>()
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(eBaoUrl));
+
+        services.AddRefitClient<IPrintApi>()
+            .AddHttpMessageHandler<RequestHandler>()
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(eBaoUrl));
     }
 
     private static void AddServices(this IServiceCollection services)
@@ -122,9 +127,11 @@ public static class ServicesRegister
         services.AddScoped<ClientService>();
         services.AddScoped<CoverageService>();
         services.AddScoped<PaymentService>();
+        services.AddScoped<PrintService>();
         services.AddScoped<EBaoService>();
         services.AddScoped<DigitalService>();
         services.AddScoped<BindingService>();
+        services.AddScoped<PrintService>();
 
         services.AddMemoryCache();
     }
