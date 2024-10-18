@@ -53,19 +53,6 @@ public static class ServicesRegister
             CookieContainer = Config.CookieContainer
         };
 
-        services.AddRefitClient<IAuthBindingApi>()
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(Config.IntegrationConfig.BindingUrl));
-
-        services.AddRefitClient<IAuthDigitalApi>()
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(Config.IntegrationConfig.DigitalUrl));
-
-        services.AddRefitClient<IProposalApi>()
-            .ConfigurePrimaryHttpMessageHandler<BindingHandler>()
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(Config.IntegrationConfig.BindingUrl));
-
-        services.AddRefitClient<ICheckoutApi>()
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(Config.IntegrationConfig.DigitalUrl));
-
         services.AddRefitClient<IStartApi>(new RefitSettings
         {
             HttpMessageHandlerFactory = () =>
@@ -129,8 +116,6 @@ public static class ServicesRegister
         services.AddScoped<PaymentService>();
         services.AddScoped<PrintService>();
         services.AddScoped<EBaoService>();
-        services.AddScoped<DigitalService>();
-        services.AddScoped<BindingService>();
         services.AddScoped<PrintService>();
 
         services.AddMemoryCache();

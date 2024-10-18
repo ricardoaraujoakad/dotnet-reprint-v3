@@ -32,6 +32,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="ApolicesReprint.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Configs\appsettings-prod.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
       <None Update="Configs\appsettings-uat1.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

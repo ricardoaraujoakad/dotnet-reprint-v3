@@ -12,50 +12,18 @@ using Serilog.Context;
 using Serilog.Events;
 
 
-var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-path = Path.Combine(path, "Bots");
-
-if (!Directory.Exists(path))
-    Directory.CreateDirectory(path);
-
-var lockDirectory = new DirectoryInfo(path);
-
-Console.WriteLine($"Cross-lock path: {path}.", path);
+var basePath = GetApplicationDirectory();
 
 var cultureInfo = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
 CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-var allConfigsFiles = Directory.GetFiles(Path.Combine(Environment.CurrentDirectory, "Configs"), "*.json");
+var configFilePath = Path.Combine(basePath, "Configs/appsettings-prod.json");
+var configFile = await File.ReadAllTextAsync(configFilePath);
+Config.IntegrationConfig = JsonSerializer.Deserialize<IntegrationConfig>(configFile);
 
-FileDistributedLockHandle? userHandle = null;
 
-foreach (var configFilePath in allConfigsFiles)
-{
-    Console.WriteLine($"Trying to read config file: {configFilePath}.");
-
-    var @lock = new FileDistributedLock(lockDirectory, configFilePath);
-    userHandle = await @lock.TryAcquireAsync();
-
-    if (userHandle == null)
-    {
-        Console.WriteLine($"Já existe outro processo com o arquivo de configuração {configFilePath}. Obtendo outro");
-        continue;
-    }
-
-    Log.Information($"Reading config file: {configFilePath}.");
-    var configFile = await File.ReadAllTextAsync(configFilePath);
-    Config.IntegrationConfig = JsonSerializer.Deserialize<IntegrationConfig>(configFile);
-    break;
-}
-
-if (userHandle == null)
-{
-    Console.WriteLine("Não há bots disponíveis para emissão.");
-    return;
-}
-
-var logPath = Path.Combine(Environment.CurrentDirectory, "Logs",
+var logPath = Path.Combine(basePath, "Logs",
     Config.IntegrationConfig.EbaoLogin.Replace(".", "_") + ".txt");
 
 var outputTemplate =
@@ -71,64 +39,93 @@ Log.Logger = new LoggerConfiguration()
     )
     .CreateLogger();
 
+
 using var _ = LogContext.PushProperty("BotUser", Config.IntegrationConfig.EbaoLogin);
 
-await using (userHandle)
+
+Log.Information("Usuário eBao: {user}.", Config.IntegrationConfig.EbaoLogin);
+Log.Information("URL eBao: {url}.", Config.IntegrationConfig.EbaoUrl);
+
+Console.Title = Config.IntegrationConfig.EbaoLogin;
+
+var provider = ServicesRegister.BuildServiceProvider();
+
+
+await using var scope = provider.CreateAsyncScope();
+
+var ebaoService = scope.ServiceProvider.GetRequiredService<EBaoService>();
+var printService = scope.ServiceProvider.GetRequiredService<PrintService>();
+var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+
+
+var sw = Stopwatch.StartNew();
+
+await userService.AuthenticateAsync();
+
+var certificates = await ReadCertificatesFromFileAsync("ApolicesReprint.txt");
+
+if (certificates.Length == 0)
 {
-    Log.Information("Usuário eBao: {user}.", Config.IntegrationConfig.EbaoLogin);
-    Log.Information("URL eBao: {url}.", Config.IntegrationConfig.EbaoUrl);
+    Log.Warning("Não há apólices para reprint.");
 
-    Log.Information("Usuário Binding: {user}.", Config.IntegrationConfig.BindingLogin);
-    Log.Information("URL Biding: {url}.", Config.IntegrationConfig.BindingUrl);
+    return;
+}
 
-    Log.Information("Usuário Digital: {user}.", Config.IntegrationConfig.DigitalLogin);
-    Log.Information("URL Digital: {url}.", Config.IntegrationConfig.DigitalUrl);
-
-    Console.Title = Config.IntegrationConfig.EbaoLogin;
-
-    var provider = ServicesRegister.BuildServiceProvider();
-
-    if (!Directory.Exists(path))
-        Directory.CreateDirectory(path);
-
-    int retry = 0;
-
-
-    await using var scope = provider.CreateAsyncScope();
-
-    var ebaoService = scope.ServiceProvider.GetRequiredService<EBaoService>();
-    var printService = scope.ServiceProvider.GetRequiredService<PrintService>();
-    var userService = scope.ServiceProvider.GetRequiredService<UserService>();
-    //var bindingService = scope.ServiceProvider.GetRequiredService<BindingService>();
-    //var digitalService = scope.ServiceProvider.GetRequiredService<DigitalService>();
-
-    Log.Information("Obtendo lista de propostas para envio.");
-
-    retry++;
-
-    var sw = Stopwatch.StartNew();
-
-    await userService.AuthenticateAsync();
-
-    var certificates = new[] { "027982024011457001455", "027982024011457001454", "027982024011457001453", "027982024011457001452", "027982024011457001451" };
-
-    foreach (var policy in certificates)
+var count = 0;
+foreach (var policy in certificates)
+{
+    try
     {
-        try
-        {
-            var result = await printService.PrintProcessAndSendEmailAsync(policy);
+        count++;
+        Log.Logger.Information("*** {count} de {total} Iniciando reprint da Apolice {policy} no eBao.", count, certificates.Length, policy);
 
-            Log.Logger.Information("Reprint da Apolice {policy} realizado no eBao com sucesso.", policy);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Erro ao enviar fazer o reprint da Apolice {policy} no eBao.", policy);
-        }
+        var result = await printService.PrintProcessAndSendEmailAsync(policy);
+
+        Log.Logger.Information("*** Reprint da Apolice {policy} realizado no eBao com sucesso.", policy);
+
     }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "*** Erro ao enviar fazer o reprint da Apolice {policy} no eBao.", policy);
+    }
+}
 
-    Log.Information("Tempo de processamento: {Elapsed}", sw.Elapsed);
+Log.Information("Tempo de processamento: {Elapsed}", sw.Elapsed);
 
-    await ebaoService.LogoutAsync();
-    Config.State = new object();
-    await Task.Delay(TimeSpan.FromSeconds(1));
+await ebaoService.LogoutAsync();
+
+
+
+static string GetApplicationDirectory()
+{
+    //Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    // Option 1: Use the location of the executing assembly
+    var path = System.AppContext.BaseDirectory;
+
+    if (!string.IsNullOrEmpty(path))
+        return path;
+
+    return AppDomain.CurrentDomain.BaseDirectory ?? Environment.CurrentDirectory;
+}
+
+
+static async Task<string[]> ReadCertificatesFromFileAsync(string fileName)
+{
+    string filePath = Path.Combine(GetApplicationDirectory(), fileName);
+
+    try
+    {
+        string[] certificates = await File.ReadAllLinesAsync(filePath);
+        Log.Information("Certificates loaded from file: {FilePath}", filePath);
+
+        return certificates.Where(c => !string.IsNullOrWhiteSpace(c))
+                           .Select(c => c.Trim())
+                           .Distinct()
+                           .ToArray();
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Failed to read certificates from file: {FilePath}", filePath);
+        return Array.Empty<string>();
+    }
 }
